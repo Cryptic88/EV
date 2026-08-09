@@ -96,9 +96,14 @@ class EVAssistant:
 
         self.state.reset()
 
-        self.speaker.speak(
-            "E.V. online. I'm listening."
-        )
+        try:
+            self.speaker.speak(
+                "E.V. online. I'm listening."
+            )
+        except Exception as error:
+            self.state.log(
+                f"Startup voice output failed: {error}"
+            )
 
         while not self.state.is_stopped():
 
@@ -155,17 +160,30 @@ class EVAssistant:
             # AI RESPONSE
             # =========================
 
-            reply = self.ai.ask(
-                user_text
-            )
+            try:
+                reply = self.ai.ask(
+                    user_text
+                )
+            except Exception as error:
+                self.state.log(
+                    f"AI request failed: {error}"
+                )
+                reply = (
+                    "I heard you, but I couldn't process that right now."
+                )
 
             # =========================
             # SPEAK
             # =========================
 
-            self.speaker.speak(
-                reply
-            )
+            try:
+                self.speaker.speak(
+                    reply
+                )
+            except Exception as error:
+                self.state.log(
+                    f"Voice output failed: {error}"
+                )
 
             self.wake_cooldown()
 
