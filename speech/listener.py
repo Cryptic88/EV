@@ -48,10 +48,22 @@ class MicrophoneListener:
 
         tokens = normalized.split()
 
-        if len(tokens) <= 3 and tokens[0] in {"e", "v", "ev"}:
+        wake_tokens = {"e", "v", "ev"}
+
+        if len(tokens) <= 4 and any(
+            token in wake_tokens
+            for token in tokens[:2]
+        ):
             return True
 
-        return normalized.startswith("e v") or normalized.startswith("ev")
+        return (
+            normalized.startswith("e v")
+            or normalized.startswith("ev")
+            or normalized.startswith("hey ev")
+            or normalized.startswith("hey e v")
+            or normalized.startswith("okay ev")
+            or normalized.startswith("ok ev")
+        )
 
     def record_until_wake_then_silence(self):
 
