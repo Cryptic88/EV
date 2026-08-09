@@ -131,12 +131,19 @@ class EVAssistant:
                 "thinking"
             )
 
+            self.state.log(
+                f"[debug] captured {len(audio) / 16000:.2f}s of audio"
+            )
+
             user_text = (
                 self.transcriber
                 .transcribe(audio)
             )
 
             if not user_text:
+                self.state.log(
+                    "[debug] transcription was empty - nothing usable heard"
+                )
                 self.wake_cooldown()
                 continue
 
