@@ -22,6 +22,9 @@ class ToolRegistry:
             "close_browser_tab":
                 self.application_tools.close_browser_tab,
 
+            "open_browser_tab":
+                self.application_tools.open_browser_tab,
+
             "set_volume":
                 self.volume_tools.set_volume,
 
@@ -110,6 +113,28 @@ class ToolRegistry:
                         },
                         "required": [
                             "tab_keywords"
+                        ],
+                    },
+                },
+            },
+
+            {
+                "type": "function",
+                "function": {
+                    "name": "open_browser_tab",
+                    "description":
+                        "Open a URL in a new tab using the user's default browser.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "url": {
+                                "type": "string",
+                                "description":
+                                    "Full URL to open, e.g. 'https://google.com'."
+                            }
+                        },
+                        "required": [
+                            "url"
                         ],
                     },
                 },

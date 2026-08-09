@@ -1,8 +1,10 @@
 import os
 import subprocess
 import time
+import webbrowser
 
 import psutil
+from pywinauto.keyboard import send_keys
 
 from config.settings import CONFIRM_BEFORE_CLOSING
 
@@ -27,6 +29,8 @@ BROWSER_PROCESS_NAMES = {
     "vivaldi.exe",
 }
 
+DEFAULT_BROWSER_PROCESS_NAMES = set()
+
 
 class ApplicationTools:
 
@@ -35,6 +39,47 @@ class ApplicationTools:
         self.listener = listener
         self.transcriber = transcriber
         self.speaker = speaker
+        self.default_browser_process_name = self._get_default_browser_process_name()
+
+    def _get_default_browser_process_name(self) -> str:
+
+        try:
+            import winreg
+
+            with winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER,
+                r"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice"
+            ) as key:
+                prog_id, _ = winreg.QueryValueEx(key, "ProgId")
+
+            prog_id = (prog_id or "").lower()
+
+            if "firefox" in prog_id:
+                return "firefox.exe"
+
+            if "chrome" in prog_id or "chromium" in prog_id or "edge" in prog_id:
+                return "chrome.exe" if "chrome" in prog_id or "chromium" in prog_id else "msedge.exe"
+
+            if "brave" in prog_id:
+                return "brave.exe"
+
+            if "opera" in prog_id:
+                return "opera.exe"
+
+            if "vivaldi" in prog_id:
+                return "vivaldi.exe"
+
+        except Exception:
+            pass
+
+        return "firefox.exe"
+
+    def _is_default_browser_process(self, process_name: str) -> bool:
+
+        if not self.default_browser_process_name:
+            return process_name in BROWSER_PROCESS_NAMES
+
+        return process_name == self.default_browser_process_name
 
     def close_program(self, process_name: str) -> str:
 
@@ -181,7 +226,7 @@ class ApplicationTools:
                 process_id = window.process_id()
                 process_name = psutil.Process(process_id).name().lower()
 
-                if process_name not in BROWSER_PROCESS_NAMES:
+                if not self._is_default_browser_process(process_name):
                     continue
 
                 if process_name == "firefox.exe":
@@ -222,18 +267,20 @@ class ApplicationTools:
     def _close_firefox_tab(self, window, keywords) -> str:
 
         try:
+            window.restore()
+        except Exception:
+            pass
+
+        try:
             window.set_focus()
         except Exception:
             pass
 
-        seen_titles = set()
+        previous_title = None
 
-        for _ in range(50):
+        for _ in range(75):
 
-            try:
-                title = (window.window_text() or "").strip()
-            except Exception:
-                title = ""
+            title = self._read_window_title(window)
 
             normalized_title = title.lower()
 
@@ -241,21 +288,56 @@ class ApplicationTools:
                 if all(keyword in normalized_title for keyword in keywords):
                     try:
                         window.type_keys("^w")
-                    except Exception as error:
-                        return f"Matched '{title}' but couldn't close it: {error}"
+                    except Exception:
+                        try:
+                            send_keys("^w")
+                        except Exception as error:
+                            return f"Matched '{title}' but couldn't close it: {error}"
 
                     return f"Closed the Firefox tab '{title}'."
 
-                if title in seen_titles:
+                if title == previous_title:
                     break
 
-                seen_titles.add(title)
+                previous_title = title
 
             try:
                 window.type_keys("^{PGDN}")
-            except Exception as error:
-                return f"Couldn't cycle Firefox tabs: {error}"
+            except Exception:
+                try:
+                    send_keys("^{PGDN}")
+                except Exception as error:
+                    return f"Couldn't cycle Firefox tabs: {error}"
 
-            time.sleep(0.15)
+            time.sleep(0.2)
 
         return f"No Firefox tab matched: {', '.join(keywords)}."
+
+    def open_browser_tab(self, url: str) -> str:
+
+        try:
+            opened = webbrowser.open_new_tab(url)
+        except Exception as error:
+            return f"Couldn't open browser tab: {error}"
+
+        if opened:
+            return f"Opened a browser tab for {url}."
+
+        return f"Tried to open {url}, but the browser rejected the request."
+
+    def _read_window_title(self, window) -> str:
+
+        for candidate in (
+            getattr(window, "window_text", None),
+            lambda: getattr(window.element_info, "name", ""),
+        ):
+
+            try:
+                title = candidate()
+            except Exception:
+                continue
+
+            if title:
+                return title.strip()
+
+        return ""

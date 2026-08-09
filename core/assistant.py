@@ -1,4 +1,5 @@
 import re
+import time
 
 from speech.listener import MicrophoneListener
 from speech.transcriber import Transcriber
@@ -11,6 +12,7 @@ from tools.volume import VolumeTools
 from tools.registry import ToolRegistry
 
 from core.state import AssistantState
+from config.settings import WAKE_WORD_COOLDOWN_SECONDS
 
 
 class EVAssistant:
@@ -96,13 +98,16 @@ class EVAssistant:
 
         tokens = normalized.split()
 
-        return (
-            "ev" in tokens
-            or any(
-                first == "e" and second == "v"
-                for first, second in zip(tokens, tokens[1:])
-            )
-        )
+        if not tokens:
+            return False
+
+        if tokens[0] == "ev":
+            return True
+
+        if len(tokens) >= 2 and tokens[0] == "e" and tokens[1] == "v":
+            return True
+
+        return False
 
     def strip_wake_phrase(self, text):
 
@@ -119,6 +124,11 @@ class EVAssistant:
         )
 
         return cleaned.strip()
+
+    def wake_cooldown(self):
+
+        self.state.set_status("idle")
+        time.sleep(WAKE_WORD_COOLDOWN_SECONDS)
 
     def run(self):
 
@@ -156,16 +166,17 @@ class EVAssistant:
             )
 
             if not user_text:
+                self.wake_cooldown()
                 continue
 
             if not self.has_wake_phrase(user_text):
-                self.state.set_status("idle")
+                self.wake_cooldown()
                 continue
 
             user_text = self.strip_wake_phrase(user_text)
 
             if not user_text:
-                self.state.set_status("idle")
+                self.wake_cooldown()
                 continue
 
             self.state.log(
@@ -199,6 +210,8 @@ class EVAssistant:
             self.speaker.speak(
                 reply
             )
+
+            self.wake_cooldown()
 
         self.state.set_status(
             "idle"

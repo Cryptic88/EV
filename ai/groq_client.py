@@ -46,14 +46,66 @@ class GroqClient:
             }
         )
 
-        response = self.client.chat.completions.create(
-            model=GROQ_MODEL,
-            messages=self.conversation,
-            tools=self.tool_registry.get_tools(),
-            tool_choice="auto",
-            temperature=0.6,
-            max_tokens=300,
-        )
+        tools = self.tool_registry.get_tools()
+
+        try:
+
+            response = self.client.chat.completions.create(
+                model=GROQ_MODEL,
+                messages=self.conversation,
+                tools=tools,
+                tool_choice="auto",
+                temperature=0.6,
+                max_tokens=300,
+            )
+
+        except Exception as error:
+
+            error_text = str(error)
+
+            if (
+                "tool_use_failed" in error_text
+                or "not in request.tools" in error_text
+            ):
+
+                self.state.log(
+                    "Model tried an unsupported tool. Retrying with "
+                    "a stricter reminder about available local tools."
+                )
+
+                self.conversation.append(
+                    {
+                        "role": "system",
+                        "content": (
+                            "Only use the local tools provided by the app. "
+                            "Do not call web search, browser, or internet "
+                            "tools. If no listed tool fits, answer directly "
+                            "without inventing one."
+                        ),
+                    }
+                )
+
+                try:
+
+                    response = self.client.chat.completions.create(
+                        model=GROQ_MODEL,
+                        messages=self.conversation,
+                        tools=tools,
+                        tool_choice="auto",
+                        temperature=0.4,
+                        max_tokens=300,
+                    )
+
+                except Exception:
+
+                    return (
+                        "I couldn't complete that request without a "
+                        "supported local tool."
+                    )
+
+            else:
+
+                raise
 
         message = response.choices[0].message
 
