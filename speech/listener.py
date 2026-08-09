@@ -1,7 +1,6 @@
 import json
 import time
 from collections import deque
-import time
 import queue
 
 import numpy as np
@@ -43,15 +42,6 @@ class MicrophoneListener:
 
         return normalized.startswith("e v") or normalized.startswith("ev")
 
-    def _chunk_to_audio(self, chunk):
-
-        audio = np.frombuffer(
-            chunk,
-            dtype=np.int16
-        ).astype(np.float32)
-
-        return audio / 32768.0
-
     def record_until_wake_then_silence(self):
 
         self.state.set_status("listening")
@@ -85,8 +75,10 @@ class MicrophoneListener:
                 if overflowed:
                     continue
 
+                chunk_bytes = bytes(chunk)
+
                 audio_chunk = np.frombuffer(
-                    chunk,
+                    chunk_bytes,
                     dtype=np.int16
                 ).copy()
 
@@ -94,7 +86,7 @@ class MicrophoneListener:
 
                     pre_roll.append(audio_chunk)
 
-                    if wake_recognizer.AcceptWaveform(chunk):
+                    if wake_recognizer.AcceptWaveform(chunk_bytes):
                         result = json.loads(wake_recognizer.Result())
                         wake_text = result.get("text", "").strip()
 
