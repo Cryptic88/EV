@@ -40,6 +40,17 @@ class MicrophoneListener:
             text.lower().replace(".", " ").replace(",", " ").split()
         )
 
+        if not normalized:
+            return False
+
+        if normalized in {"e", "v", "ev", "e v"}:
+            return True
+
+        tokens = normalized.split()
+
+        if len(tokens) <= 3 and tokens[0] in {"e", "v", "ev"}:
+            return True
+
         return normalized.startswith("e v") or normalized.startswith("ev")
 
     def record_until_wake_then_silence(self):
@@ -53,7 +64,7 @@ class MicrophoneListener:
         silence_start = None
         start_time = time.time()
 
-        block_size = 4000
+        block_size = 1600
 
         with sd.RawInputStream(
             samplerate=SAMPLE_RATE,
