@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>E.V. — Enhanced Voice AI</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+<body>
+
+    <div class="app">
+
+        <!-- HEADER -->
+
+        <header class="top-bar">
+
+            <div class="brand">
+
+                <span class="status-dot"></span>
+
+                <span>
+                    E.V. — ENHANCED VOICE AI
+                </span>
+
+            </div>
+
+            <div class="header-right">
+
+                <span class="demo-mode">
+                    DEMO MODE
+                </span>
+
+                <button
+                    id="resetButton"
+                    class="reset-button"
+                >
+                    RESET
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <!-- MAIN -->
+
+        <main class="main-content">
+
+            <section class="assistant-area">
+
+                <!-- ORB -->
+
+                <div
+                    id="orb"
+                    class="orb-container"
+                >
+
+                    <div class="orb-glow"></div>
+
+                    <div class="orb-ring ring-one"></div>
+                    <div class="orb-ring ring-two"></div>
+                    <div class="orb-ring ring-three"></div>
+
+                    <div class="orb">
+
+                        <div class="grid"></div>
+
+                        <div class="orb-particles">
+
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+
+                        </div>
+
+                        <div class="orb-text">
+                            E.V.
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- INSTRUCTION -->
+
+                <div
+                    id="orbInstruction"
+                    class="orb-instruction"
+                >
+                    Tap the orb to speak
+                </div>
+
+
+                <!-- STATUS -->
+
+                <div
+                    id="statusBox"
+                    class="status-box"
+                >
+                    <span id="statusText">
+                        E.V. is ready
+                    </span>
+                </div>
+
+
+                <!-- CONVERSATION -->
+
+                <div class="conversation">
+
+                    <p>
+                        Say anything to start a conversation
+                    </p>
+
+                    <span>
+                        — E.V. is always listening —
+                    </span>
+
+                </div>
+
+            </section>
+
+        </main>
+
+
+        <!-- HELP BUTTON -->
+
+        <button
+            class="help-button"
+            title="Help"
+        >
+            ?
+        </button>
+
+    </div>
+
+
+    <script
+        src="{{ url_for('static', filename='js/app.js') }}"
+    ></script>
+
+</body>
+
+</html>

@@ -1,0 +1,13 @@
+faster-whisper
+sounddevice
+numpy
+groq
+edge-tts
+playsound==1.2.2
+psutil
+pycaw
+comtypes
+flask
+pywinauto
+pystray
+pillow

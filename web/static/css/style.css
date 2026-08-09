@@ -1,0 +1,686 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+
+    --background: #020812;
+    --panel: #030b17;
+
+    --blue: #0077ff;
+    --cyan: #00b7ff;
+
+    --text: #c7d8ee;
+    --muted: #41658b;
+
+    --border: rgba(0, 119, 255, 0.2);
+}
+
+
+body {
+
+    min-height: 100vh;
+
+    background:
+        linear-gradient(
+            rgba(0, 119, 255, 0.035) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(0, 119, 255, 0.035) 1px,
+            transparent 1px
+        ),
+        var(--background);
+
+    background-size: 40px 40px;
+
+    color: var(--text);
+
+    font-family:
+        "Courier New",
+        monospace;
+
+    overflow: hidden;
+}
+
+
+.app {
+
+    min-height: 100vh;
+
+    position: relative;
+}
+
+
+/* =========================
+   HEADER
+   ========================= */
+
+.top-bar {
+
+    height: 94px;
+
+    border-bottom:
+        1px solid var(--border);
+
+    background:
+        rgba(1, 7, 16, 0.92);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 0 40px;
+}
+
+
+.brand {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 16px;
+
+    color: #6f9ac5;
+
+    letter-spacing: 4px;
+
+    font-size: 16px;
+}
+
+
+.status-dot {
+
+    width: 10px;
+    height: 10px;
+
+    border-radius: 50%;
+
+    background: #168cff;
+
+    box-shadow:
+        0 0 8px #168cff,
+        0 0 20px rgba(0, 119, 255, 0.6);
+}
+
+
+.header-right {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 24px;
+}
+
+
+.demo-mode {
+
+    color: #173d67;
+
+    font-size: 13px;
+
+    letter-spacing: 3px;
+}
+
+
+.reset-button {
+
+    background: transparent;
+
+    border: 1px solid rgba(0, 119, 255, 0.25);
+
+    color: #31577f;
+
+    padding: 9px 14px;
+
+    border-radius: 8px;
+
+    font-family: inherit;
+
+    letter-spacing: 2px;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+
+.reset-button:hover {
+
+    color: #00aaff;
+
+    border-color: #008cff;
+
+    box-shadow:
+        0 0 15px rgba(0, 119, 255, 0.2);
+}
+
+
+/* =========================
+   MAIN
+   ========================= */
+
+.main-content {
+
+    min-height: calc(100vh - 94px);
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: flex-start;
+}
+
+
+.assistant-area {
+
+    width: 100%;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+}
+
+
+/* =========================
+   ORB
+   ========================= */
+
+.orb-container {
+
+    width: 500px;
+    height: 500px;
+
+    margin-top: 35px;
+
+    position: relative;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+}
+
+
+.orb-glow {
+
+    position: absolute;
+
+    width: 410px;
+    height: 410px;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(0, 119, 255, 0.22),
+            transparent 68%
+        );
+
+    filter: blur(20px);
+
+    animation: pulse 4s ease-in-out infinite;
+}
+
+
+.orb {
+
+    width: 310px;
+    height: 310px;
+
+    border-radius: 50%;
+
+    position: relative;
+
+    overflow: hidden;
+
+    border:
+        1px solid rgba(0, 149, 255, 0.6);
+
+    background:
+        radial-gradient(
+            circle at center,
+            #052c50 0%,
+            #031b35 45%,
+            #010b17 75%
+        );
+
+    box-shadow:
+
+        0 0 20px rgba(0, 119, 255, 0.7),
+
+        0 0 60px rgba(0, 119, 255, 0.35),
+
+        inset 0 0 60px
+        rgba(0, 119, 255, 0.25);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+}
+
+
+.grid {
+
+    position: absolute;
+
+    inset: 0;
+
+    opacity: 0.4;
+
+    background:
+        linear-gradient(
+            rgba(0, 174, 255, 0.35) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(0, 174, 255, 0.35) 1px,
+            transparent 1px
+        );
+
+    background-size: 25px 25px;
+
+    border-radius: 50%;
+
+    transform:
+        perspective(400px)
+        rotateX(10deg);
+
+    mask-image:
+        radial-gradient(
+            circle,
+            black 35%,
+            transparent 70%
+        );
+}
+
+
+.orb-text {
+
+    z-index: 5;
+
+    font-family:
+        Arial,
+        sans-serif;
+
+    font-size: 56px;
+
+    font-weight: 300;
+
+    letter-spacing: 7px;
+
+    color: #d9e4f3;
+
+    text-shadow:
+        0 0 12px
+        rgba(255,255,255,0.25);
+}
+
+
+/* =========================
+   RINGS
+   ========================= */
+
+.orb-ring {
+
+    position: absolute;
+
+    border-radius: 50%;
+
+    border: 1px solid
+        rgba(0, 119, 255, 0.25);
+}
+
+
+.ring-one {
+
+    width: 410px;
+    height: 410px;
+
+    animation:
+        rotate 18s linear infinite;
+}
+
+
+.ring-two {
+
+    width: 455px;
+    height: 455px;
+
+    border-style: dashed;
+
+    animation:
+        rotate-reverse 25s linear infinite;
+}
+
+
+.ring-three {
+
+    width: 480px;
+    height: 480px;
+
+    opacity: 0.35;
+}
+
+
+/* =========================
+   PARTICLES
+   ========================= */
+
+.orb-particles span {
+
+    position: absolute;
+
+    width: 5px;
+    height: 5px;
+
+    border-radius: 50%;
+
+    background: #00bfff;
+
+    box-shadow:
+        0 0 10px #00bfff;
+
+    animation:
+        float 3s ease-in-out infinite;
+}
+
+
+.orb-particles span:nth-child(1) {
+    top: 20%;
+    left: 55%;
+}
+
+.orb-particles span:nth-child(2) {
+    top: 35%;
+    left: 75%;
+}
+
+.orb-particles span:nth-child(3) {
+    top: 60%;
+    left: 25%;
+}
+
+.orb-particles span:nth-child(4) {
+    top: 70%;
+    left: 65%;
+}
+
+.orb-particles span:nth-child(5) {
+    top: 15%;
+    left: 35%;
+}
+
+.orb-particles span:nth-child(6) {
+    top: 45%;
+    left: 20%;
+}
+
+.orb-particles span:nth-child(7) {
+    top: 78%;
+    left: 48%;
+}
+
+.orb-particles span:nth-child(8) {
+    top: 30%;
+    left: 45%;
+}
+
+
+/* =========================
+   INSTRUCTION
+   ========================= */
+
+.orb-instruction {
+
+    margin-top: -5px;
+
+    color: #4684b7;
+
+    font-size: 16px;
+
+    letter-spacing: 2px;
+}
+
+
+/* =========================
+   STATUS
+   ========================= */
+
+.status-box {
+
+    margin-top: 34px;
+
+    min-width: 320px;
+
+    padding: 12px 22px;
+
+    text-align: center;
+
+    border:
+        1px solid rgba(0, 119, 255, 0.45);
+
+    background:
+        rgba(0, 60, 120, 0.12);
+
+    border-radius: 9px;
+
+    color: #00aaff;
+
+    font-size: 13px;
+}
+
+
+/* =========================
+   CONVERSATION
+   ========================= */
+
+.conversation {
+
+    margin-top: 52px;
+
+    text-align: center;
+
+    color: #1f507d;
+
+    font-size: 15px;
+
+    line-height: 2;
+}
+
+
+.conversation span {
+
+    color: #173d61;
+
+    letter-spacing: 3px;
+
+    font-size: 12px;
+}
+
+
+/* =========================
+   HELP
+   ========================= */
+
+.help-button {
+
+    position: fixed;
+
+    right: 14px;
+    bottom: 14px;
+
+    width: 40px;
+    height: 40px;
+
+    border-radius: 50%;
+
+    border: 1px solid #444;
+
+    background: #303030;
+
+    color: #eee;
+
+    font-size: 20px;
+
+    cursor: pointer;
+}
+
+
+/* =========================
+   ANIMATIONS
+   ========================= */
+
+@keyframes pulse {
+
+    0%, 100% {
+        transform: scale(0.95);
+        opacity: 0.7;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 1;
+    }
+}
+
+
+@keyframes rotate {
+
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+@keyframes rotate-reverse {
+
+    from {
+        transform: rotate(360deg);
+    }
+
+    to {
+        transform: rotate(0deg);
+    }
+}
+
+
+@keyframes float {
+
+    0%, 100% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
+
+    50% {
+        transform: translateY(-12px);
+        opacity: 1;
+    }
+}
+
+
+/* =========================
+   LISTENING STATE
+   ========================= */
+
+.orb-container.listening .orb {
+
+    box-shadow:
+
+        0 0 30px rgba(0, 150, 255, 0.9),
+
+        0 0 90px rgba(0, 150, 255, 0.5),
+
+        inset 0 0 70px
+        rgba(0, 150, 255, 0.4);
+
+    transform: scale(1.04);
+}
+
+
+.orb-container.thinking .orb {
+
+    animation:
+        thinking 1.5s ease-in-out infinite;
+}
+
+
+.orb-container.speaking .orb {
+
+    animation:
+        speaking 0.7s ease-in-out infinite;
+}
+
+
+@keyframes thinking {
+
+    0%, 100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.06);
+    }
+}
+
+
+@keyframes speaking {
+
+    0%, 100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.08);
+    }
+}
+
+
+/* =========================
+   MOBILE
+   ========================= */
+
+@media (max-width: 700px) {
+
+    .top-bar {
+        padding: 0 20px;
+    }
+
+    .brand {
+        font-size: 12px;
+    }
+
+    .demo-mode {
+        display: none;
+    }
+
+    .orb-container {
+        transform: scale(0.75);
+        margin-top: 0;
+        height: 400px;
+    }
+
+    .orb-instruction {
+        margin-top: -30px;
+    }
+}
