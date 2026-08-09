@@ -101,11 +101,16 @@ class EVAssistant:
         if not tokens:
             return False
 
-        if tokens[0] == "ev":
-            return True
-
         if len(tokens) >= 2 and tokens[0] == "e" and tokens[1] == "v":
             return True
+
+        for index in range(min(3, len(tokens))):
+            if tokens[index] == "ev":
+                return True
+
+            if index + 1 < len(tokens):
+                if tokens[index] == "e" and tokens[index + 1] == "v":
+                    return True
 
         return False
 
@@ -119,6 +124,18 @@ class EVAssistant:
 
         cleaned = re.sub(
             r"^(e\s*\.?\s*v\s*\.?\s*)",
+            "",
+            cleaned
+        )
+
+        cleaned = re.sub(
+            r"^(e\s+v\s+)",
+            "",
+            cleaned
+        )
+
+        cleaned = re.sub(
+            r"^(hey|hi|okay|ok)\s+",
             "",
             cleaned
         )
@@ -170,6 +187,9 @@ class EVAssistant:
                 continue
 
             if not self.has_wake_phrase(user_text):
+                self.state.log(
+                    f"Ignored audio: {user_text}"
+                )
                 self.wake_cooldown()
                 continue
 
