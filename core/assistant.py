@@ -1,4 +1,3 @@
-import re
 import time
 
 from speech.listener import MicrophoneListener
@@ -88,60 +87,6 @@ class EVAssistant:
             for phrase in exit_phrases
         )
 
-    def has_wake_phrase(self, text):
-
-        normalized = re.sub(
-            r"[^a-z0-9]+",
-            " ",
-            text.lower()
-        ).strip()
-
-        tokens = normalized.split()
-
-        if not tokens:
-            return False
-
-        if len(tokens) >= 2 and tokens[0] == "e" and tokens[1] == "v":
-            return True
-
-        for index in range(min(3, len(tokens))):
-            if tokens[index] == "ev":
-                return True
-
-            if index + 1 < len(tokens):
-                if tokens[index] == "e" and tokens[index + 1] == "v":
-                    return True
-
-        return False
-
-    def strip_wake_phrase(self, text):
-
-        cleaned = re.sub(
-            r"^[^a-z0-9]*",
-            "",
-            text.lower()
-        )
-
-        cleaned = re.sub(
-            r"^(e\s*\.?\s*v\s*\.?\s*)",
-            "",
-            cleaned
-        )
-
-        cleaned = re.sub(
-            r"^(e\s+v\s+)",
-            "",
-            cleaned
-        )
-
-        cleaned = re.sub(
-            r"^(hey|hi|okay|ok)\s+",
-            "",
-            cleaned
-        )
-
-        return cleaned.strip()
-
     def wake_cooldown(self):
 
         self.state.set_status("idle")
@@ -163,11 +108,15 @@ class EVAssistant:
 
             audio = (
                 self.listener
-                .record_until_silence()
+                .record_until_wake_then_silence()
             )
 
             if self.state.is_stopped():
                 break
+
+            if audio is None:
+                self.wake_cooldown()
+                continue
 
             # =========================
             # TRANSCRIBE
@@ -181,19 +130,6 @@ class EVAssistant:
                 self.transcriber
                 .transcribe(audio)
             )
-
-            if not user_text:
-                self.wake_cooldown()
-                continue
-
-            if not self.has_wake_phrase(user_text):
-                self.state.log(
-                    f"Ignored audio: {user_text}"
-                )
-                self.wake_cooldown()
-                continue
-
-            user_text = self.strip_wake_phrase(user_text)
 
             if not user_text:
                 self.wake_cooldown()
