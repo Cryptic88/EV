@@ -12,3 +12,6 @@ pywinauto
 pystray
 pillow
 vosk
+ddgs
+beautifulsoup4
+requests

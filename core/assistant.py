@@ -8,6 +8,7 @@ from ai.groq_client import GroqClient
 
 from tools.applications import ApplicationTools
 from tools.volume import VolumeTools
+from tools.web_search import WebTools
 from tools.registry import ToolRegistry
 
 from core.state import AssistantState
@@ -53,13 +54,16 @@ class EVAssistant:
 
         self.volume_tools = VolumeTools()
 
+        self.web_tools = WebTools()
+
         # =========================
         # TOOL REGISTRY
         # =========================
 
         self.tool_registry = ToolRegistry(
             self.application_tools,
-            self.volume_tools
+            self.volume_tools,
+            self.web_tools
         )
 
         # =========================
