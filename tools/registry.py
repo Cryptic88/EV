@@ -74,8 +74,9 @@ class ToolRegistry:
                                 "type": "string",
                                 "description": (
                                     "Application to open, "
-                                    "for example notepad, "
-                                    "calculator, or spotify."
+                                    "for example WhatsApp, Outlook, "
+                                    "Visual Studio Code, Android Studio, "
+                                    "Notepad, or Spotify."
                                 )
                             }
                         },

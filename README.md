@@ -36,6 +36,23 @@ Replies are generated as a token stream, prepared on a bounded synthesis worker,
 
 To compare the installed American Bella and British Emma voices, run `.\.venv-local\Scripts\python.exe audition_voices.py`. Matching WAV samples are saved in `artifacts/voices/`. Bella is active by default. To choose Emma, set `KOKORO_VOICE=bf_emma` and `KOKORO_LANGUAGE=en-gb` in `.env`, then restart E.V.
 
+## Application shortcuts
+
+E.V. has 34 configured app shortcuts based on this laptop's installed Start-menu entries. Voice aliases and Windows launch targets are in `config/app_shortcuts.json`.
+
+| Group | Applications |
+| --- | --- |
+| IDEs and development | Visual Studio Code, Visual Studio, Android Studio, Arduino IDE, Postman, Docker Desktop, GitHub Desktop, Terminal |
+| Databases | SQL Server Management Studio, MySQL Workbench, pgAdmin |
+| Messaging and meetings | WhatsApp, Outlook, Outlook (classic), Microsoft Teams, Discord, Zoom |
+| Office | Word, Excel, PowerPoint, OneNote |
+| Browsers and media | Chrome, Edge, Firefox, Spotify, CapCut |
+| Utilities | Notepad, Calculator, Paint, File Explorer, Task Manager, Snipping Tool, 7-Zip, WinRAR |
+
+Examples: “Open VS Code”, “Open WhatsApp”, “Open Outlook”, “Open classic Outlook”, “Open Android Studio”, “Open Postman”, or “Close Visual Studio”. Closing an app still requires spoken confirmation. Known app aliases map to exact executable names, so closing VS Code targets `Code.exe`, while Visual Studio targets `devenv.exe`. Outlook selects the new app; classic Outlook is separate. Opening these apps launches them; it does not read or send their messages or edit their contents.
+
+To add another shortcut, add a record with `name`, `aliases`, `target`, and `process_names`, then restart E.V. Store apps use `shell:AppsFolder\<AppID>`; use `Get-StartApps` to find installed app IDs. Executable paths also work. Some app IDs contain installation versions; update their records after an upgrade if launching stops working. The configured app names are included in E.V.'s prompt.
+
 ## Fully local brain (optional)
 
 Install [Ollama](https://ollama.com), start its local server, then run:

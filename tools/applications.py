@@ -1,23 +1,12 @@
 import os
-import subprocess
 import time
 import webbrowser
 import psutil
 
 from pywinauto.keyboard import send_keys
 from config.settings import CONFIRM_BEFORE_CLOSING
+from tools.app_catalog import AppCatalog
 
-
-COMMON_APPS = {
-    "notepad": "notepad.exe",
-    "calculator": "calc.exe",
-    "paint": "mspaint.exe",
-    "explorer": "explorer.exe",
-    "file explorer": "explorer.exe",
-    "word": "winword",
-    "excel": "excel",
-    "task manager": "taskmgr.exe",
-}
 
 BROWSER_PROCESS_NAMES = {
     "chrome.exe",
@@ -36,6 +25,7 @@ class ApplicationTools:
         self.listener = listener
         self.transcriber = transcriber
         self.speaker = speaker
+        self.app_catalog = AppCatalog()
 
         self.default_browser_process_name = (
             self._get_default_browser_process_name()
@@ -110,33 +100,23 @@ class ApplicationTools:
         process_name: str
     ) -> str:
 
-        target = COMMON_APPS.get(
-            process_name.lower(),
-            process_name
-        )
+        if not process_name.strip():
+            return "Please name the application you want to open."
+        app = self.app_catalog.resolve(process_name)
+        target = app["target"] if app else process_name.strip()
+        display_name = app["name"] if app else process_name
 
         try:
             os.startfile(target)
 
-            return f"Opening {process_name}."
+            return f"Opening {display_name}."
 
-        except FileNotFoundError:
-
-            try:
-                subprocess.Popen(
-                    target,
-                    shell=True
-                )
-
-                return f"Opening {process_name}."
-
-            except Exception:
-
-                return (
-                    f"Couldn't find '{process_name}'. "
-                    "Add its exact executable name "
-                    "to COMMON_APPS if necessary."
-                )
+        except OSError as error:
+            self.state.log(f"Could not launch {display_name}: {error}")
+            return (
+                f"Couldn't open {display_name}. Check that it is installed "
+                "and its shortcut is configured in app_shortcuts.json."
+            )
 
     # ============================================================
     # CLOSE PROGRAM
@@ -147,7 +127,11 @@ class ApplicationTools:
         process_name: str
     ) -> str:
 
+        if not process_name.strip():
+            return "Please name the application you want to close."
         matches = []
+        app = self.app_catalog.resolve(process_name)
+        process_names = {name.casefold() for name in app["process_names"]} if app else None
 
         for proc in psutil.process_iter(
             ["pid", "name"]
@@ -158,8 +142,8 @@ class ApplicationTools:
 
                 if (
                     name
-                    and process_name.lower()
-                    in name.lower()
+                    and (name.casefold() in process_names if process_names is not None
+                         else process_name.casefold() in name.casefold())
                 ):
                     matches.append(proc)
 
