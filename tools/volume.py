@@ -13,6 +13,10 @@ class VolumeTools:
 
         devices = AudioUtilities.GetSpeakers()
 
+        # Recent pycaw returns AudioDevice; older releases return IMMDevice.
+        if hasattr(type(devices), "EndpointVolume"):
+            return devices.EndpointVolume
+
         interface = devices.Activate(
             IAudioEndpointVolume._iid_,
             CLSCTX_ALL,

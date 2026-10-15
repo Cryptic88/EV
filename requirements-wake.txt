@@ -1,0 +1,2 @@
+# Optional: use only with a trained custom ONNX wake model.
+openwakeword==0.6.0

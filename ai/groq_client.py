@@ -1,266 +1,139 @@
+"""Streaming Groq/Ollama client sharing conversation and local tool behavior."""
 import json
-from typing import Any
-
-from groq import Groq
-from groq.types.chat import (
-    ChatCompletionAssistantMessageParam,
-    ChatCompletionMessageParam,
-    ChatCompletionToolMessageParam,
-)
-
-from config.settings import (
-    GROQ_API_KEY,
-    GROQ_MODEL,
-)
-
+from config import settings
 from ai.prompts import get_system_prompt
+from ai.streaming import SentenceBuffer
 
 
 class GroqClient:
-
+    # Keep the public class name for existing integrations.
     def __init__(self, state, tool_registry):
         self.state = state
         self.tool_registry = tool_registry
+        self.before_tool = lambda: None
+        self.backend = settings.LLM_BACKEND
+        self.conversation = [{"role": "system", "content": get_system_prompt()}]
+        if self.backend == "groq":
+            from groq import Groq
+            if not settings.GROQ_API_KEY:
+                raise ValueError("Set GROQ_API_KEY, or use LLM_BACKEND=ollama")
+            self.client = Groq(api_key=settings.GROQ_API_KEY, timeout=60, max_retries=1)
+        elif self.backend != "ollama":
+            raise ValueError("LLM_BACKEND must be groq or ollama")
 
-        if not GROQ_API_KEY:
-            self.state.log(
-                "WARNING: GROQ_API_KEY environment variable not found."
-            )
-
-        self.client = Groq(
-            api_key=GROQ_API_KEY
-        )
-
-        self.conversation: list[ChatCompletionMessageParam] = [
-            {
-                "role": "system",
-                "content": get_system_prompt(),
-            }
-        ]
-
-    def ask(self, user_text: str) -> str:
-        self.state.set_status("thinking")
-
-        self.conversation.append(
-            {
-                "role": "user",
-                "content": user_text,
-            }
-        )
-
+    def _events(self):
         tools = self.tool_registry.get_tools()
-
-        try:
-            response = self.client.chat.completions.create(
-                model=GROQ_MODEL,
-                messages=self.conversation,
-                tools=tools,
-                tool_choice="auto",
-                temperature=0.6,
-                max_tokens=300,
-            )
-
-        except Exception as error:
-            error_text = str(error)
-
-            self.state.log(
-                f"Groq request failed: {error}"
-            )
-
-            if (
-                "tool_use_failed" in error_text
-                or "not in request.tools" in error_text
-            ):
-                self.state.log(
-                    "Model tried an unsupported tool. "
-                    "Retrying with a stricter reminder "
-                    "about available local tools."
-                )
-
-                self.conversation.append(
-                    {
-                        "role": "system",
-                        "content": (
-                            "Only use tools provided by the application. "
-                            "Do not invent tools. "
-                            "Available tools may include search_web "
-                            "and read_webpage. "
-                            "If no available tool matches the request, "
-                            "answer directly."
-                        ),
-                    }
-                )
-
-                try:
-                    response = self.client.chat.completions.create(
-                        model=GROQ_MODEL,
-                        messages=self.conversation,
-                        tools=tools,
-                        tool_choice="auto",
-                        temperature=0.4,
-                        max_tokens=300,
-                    )
-
-                except Exception as retry_error:
-                    self.state.log(
-                        f"Groq retry failed: {retry_error}"
-                    )
-
-                    return (
-                        "I couldn't complete that request "
-                        "with the available tools."
-                    )
-
-            else:
-                return (
-                    "I'm having trouble connecting to my AI service "
-                    "right now."
-                )
-
-        message = response.choices[0].message
-
-        # ============================================================
-        # TOOL CALL
-        # ============================================================
-
-        if message.tool_calls:
-
-            assistant_message: ChatCompletionAssistantMessageParam = {
-                "role": "assistant",
-                "content": message.content or "",
-                "tool_calls": [
-                    {
-                        "id": call.id,
-                        "type": "function",
-                        "function": {
-                            "name": call.function.name,
-                            "arguments": call.function.arguments,
-                        },
-                    }
-                    for call in message.tool_calls
-                ],
-            }
-
-            self.conversation.append(
-                assistant_message
-            )
-
-            # Execute each requested tool.
-            #
-            # We execute them sequentially because this keeps
-            # the tool system predictable and works well with
-            # the current EV architecture.
-
-            for call in message.tool_calls:
-
-                function_name = call.function.name
-
-                try:
-                    arguments: dict[str, Any] = json.loads(
-                        call.function.arguments
-                    )
-
-                except (
-                    json.JSONDecodeError,
-                    TypeError,
-                ):
-                    arguments = {}
-
-                self.state.log(
-                    f"Executing tool: {function_name}"
-                )
-
-                try:
-                    result = self.tool_registry.execute(
-                        function_name,
-                        arguments,
-                    )
-
-                except Exception as error:
-                    self.state.log(
-                        f"Tool '{function_name}' failed: {error}"
-                    )
-
-                    result = (
-                        f"Tool '{function_name}' failed: "
-                        f"{error}"
-                    )
-
-                tool_message: ChatCompletionToolMessageParam = {
-                    "role": "tool",
-                    "tool_call_id": call.id,
-                    "content": str(result),
-                }
-
-                self.conversation.append(
-                    tool_message
-                )
-
-            # ========================================================
-            # FINAL AI RESPONSE AFTER TOOL EXECUTION
-            # ========================================================
-
+        if self.backend == "groq":
+            stream = self.client.chat.completions.create(model=settings.GROQ_MODEL,
+                messages=[{k: v for k, v in m.items() if k != "tool_name"}
+                          for m in self.conversation], tools=tools, tool_choice="auto",
+                temperature=0.6, max_tokens=300, stream=True)
             try:
-                follow_up = (
-                    self.client
-                    .chat
-                    .completions
-                    .create(
-                        model=GROQ_MODEL,
-                        messages=self.conversation,
-                        tools=self.tool_registry.get_tools(),
-                        tool_choice="auto",
-                        temperature=0.6,
-                        max_tokens=300,
-                    )
-                )
+                for chunk in stream:
+                    if chunk.choices:
+                        delta = chunk.choices[0].delta
+                        yield delta.content or "", [call.model_dump(exclude_none=True)
+                                                      for call in delta.tool_calls or []]
+            finally:
+                stream.close()
+        else:
+            import requests
+            # Ollama accepts parsed tool arguments, unlike Groq's JSON strings.
+            messages = []
+            for message in self.conversation:
+                copied = dict(message)
+                if "tool_calls" in copied:
+                    copied["tool_calls"] = [{"function": {
+                        "name": call["function"]["name"],
+                        "arguments": json.loads(call["function"]["arguments"]),
+                    }} for call in copied["tool_calls"]]
+                if copied.get("role") == "tool":
+                    copied.pop("tool_call_id", None)
+                messages.append(copied)
+            with requests.post(settings.OLLAMA_BASE_URL.rstrip("/") + "/api/chat",
+                    json={"model": settings.OLLAMA_MODEL, "messages": messages,
+                          "tools": tools, "stream": True, "think": False,
+                          "options": {"temperature": 0.6, "num_predict": 300}},
+                    stream=True, timeout=(10, 120)) as response:
+                response.raise_for_status()
+                call_index = 0
+                for line in response.iter_lines():
+                    if not line:
+                        continue
+                    event = json.loads(line)
+                    if event.get("error"):
+                        raise RuntimeError(event["error"])
+                    message = event.get("message", {})
+                    calls = []
+                    for call in message.get("tool_calls", []):
+                        calls.append({"index": call_index, "function": call["function"]})
+                        call_index += 1
+                    yield message.get("content", ""), calls
+                    if event.get("done"):
+                        break
 
-                follow_up_message = (
-                    follow_up.choices[0].message
-                )
+    def ask(self, user_text):
+        return " ".join(self.ask_stream(user_text))
 
-                reply = (
-                    follow_up_message.content or ""
-                ).strip()
-
-            except Exception as error:
-                self.state.log(
-                    f"Groq follow-up failed: {error}"
-                )
-
-                reply = ""
-
-            if not reply:
-                reply = "Done."
-
-            self.conversation.append(
-                {
-                    "role": "assistant",
-                    "content": reply,
-                }
-            )
-
-            return reply
-
-        # ============================================================
-        # NORMAL RESPONSE
-        # ============================================================
-
-        reply = (
-            message.content or ""
-        ).strip()
-
-        if not reply:
-            reply = (
-                "I heard you, but I'm not sure how to "
-                "respond to that."
-            )
-
-        self.conversation.append(
-            {
-                "role": "assistant",
-                "content": reply,
-            }
-        )
-
-        return reply
+    def ask_stream(self, user_text):
+        self.state.set_status("thinking")
+        self.conversation.append({"role": "user", "content": user_text})
+        for round_index in range(4):
+            text = ""
+            calls = {}
+            sentences = SentenceBuffer()
+            events = self._events()
+            try:
+                for content, deltas in events:
+                    if self.state.is_stopped():
+                        return
+                    text += content
+                    for delta in deltas:
+                        index = delta.get("index", 0)
+                        call = calls.setdefault(index, {"id": f"ev_{round_index}_{index}",
+                            "type": "function", "function": {"name": "", "arguments": ""}})
+                        if delta.get("id"):
+                            call["id"] = delta["id"]
+                        function = delta.get("function", {})
+                        call["function"]["name"] += function.get("name") or ""
+                        arguments = function.get("arguments")
+                        if isinstance(arguments, dict):
+                            call["function"]["arguments"] = json.dumps(arguments)
+                        else:
+                            call["function"]["arguments"] += arguments or ""
+                    yield from sentences.feed(content)
+            finally:
+                events.close()
+            yield from sentences.finish()
+            message = {"role": "assistant", "content": text}
+            if calls:
+                message["tool_calls"] = [calls[index] for index in sorted(calls)]
+            self.conversation.append(message)
+            if not calls:
+                if not text.strip():
+                    message["content"] = "I couldn't generate a reply. Please try again."
+                    yield message["content"]
+                return
+            # Finish any spoken preamble before a tool asks for voice confirmation.
+            self.before_tool()
+            for call in message["tool_calls"]:
+                name = call["function"]["name"]
+                try:
+                    arguments = json.loads(call["function"]["arguments"] or "{}")
+                    if not isinstance(arguments, dict):
+                        raise ValueError("Tool arguments must be an object")
+                    if self.state.is_stopped():
+                        result = "Cancelled because E.V. is stopping."
+                    elif round_index == 3:
+                        result = "Tool round limit reached; ask the user to try again."
+                    else:
+                        self.state.log(f"Executing tool: {name}")
+                        result = self.tool_registry.execute(name, arguments)
+                except Exception as error:
+                    self.state.log(f"Tool '{name}' failed: {error}")
+                    result = f"Tool '{name}' failed: {error}"
+                self.conversation.append({"role": "tool", "tool_call_id": call["id"],
+                                          "tool_name": name, "content": str(result)})
+        reply = "I've reached the tool limit for this request. Please try again."
+        self.conversation.append({"role": "assistant", "content": reply})
+        yield reply

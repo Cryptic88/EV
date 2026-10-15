@@ -1,5 +1,3 @@
-import time
-
 from speech.listener import MicrophoneListener
 from speech.transcriber import Transcriber
 from speech.speaker import Speaker
@@ -13,6 +11,7 @@ from tools.registry import ToolRegistry
 
 from core.state import AssistantState
 from config.settings import WAKE_WORD_COOLDOWN_SECONDS
+from config import settings
 
 
 class EVAssistant:
@@ -94,16 +93,20 @@ class EVAssistant:
     def wake_cooldown(self):
 
         self.state.set_status("idle")
-        time.sleep(WAKE_WORD_COOLDOWN_SECONDS)
+        self.state.stop_event.wait(WAKE_WORD_COOLDOWN_SECONDS)
 
     def run(self):
 
         self.state.reset()
+        follow_up = False
 
         try:
             self.speaker.speak(
-                "E.V. online. I'm listening."
+                "Hey, I'm here. Tell me what's on your mind."
             )
+            follow_up = settings.FOLLOW_UP_SECONDS > 0
+            if follow_up:
+                self.state.stop_event.wait(settings.REPLY_TAIL_SECONDS)
         except Exception as error:
             self.state.log(
                 f"Startup voice output failed: {error}"
@@ -115,16 +118,14 @@ class EVAssistant:
             # LISTEN
             # =========================
 
-            audio = (
-                self.listener
-                .record_until_wake_then_silence()
-            )
+            audio = (self.listener.record_followup() if follow_up else
+                     self.listener.record_until_wake_then_silence())
+            follow_up = False
 
             if self.state.is_stopped():
                 break
 
             if audio is None:
-                self.wake_cooldown()
                 continue
 
             # =========================
@@ -172,31 +173,22 @@ class EVAssistant:
             # =========================
 
             try:
-                reply = self.ai.ask(
-                    user_text
-                )
+                self.speaker.speak_stream(self.ai.ask_stream(user_text), ai=self.ai)
+                follow_up = settings.FOLLOW_UP_SECONDS > 0
             except Exception as error:
                 self.state.log(
                     f"AI request failed: {error}"
                 )
-                reply = (
-                    "I heard you, but I couldn't process that right now."
-                )
+                try:
+                    self.speaker.speak("I couldn't finish that request. Please try again.")
+                except Exception as voice_error:
+                    self.state.log(f"Voice output failed: {voice_error}")
 
-            # =========================
-            # SPEAK
-            # =========================
-
-            try:
-                self.speaker.speak(
-                    reply
-                )
-            except Exception as error:
-                self.state.log(
-                    f"Voice output failed: {error}"
-                )
-
-            self.wake_cooldown()
+            if follow_up:
+                self.state.log(f"[conversation] Listening for a follow-up for {settings.FOLLOW_UP_SECONDS:g}s")
+                self.state.stop_event.wait(settings.REPLY_TAIL_SECONDS)
+            else:
+                self.wake_cooldown()
 
         self.state.set_status(
             "idle"

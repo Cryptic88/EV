@@ -51,6 +51,16 @@ def open_ui():
     webbrowser.open(APP_URL)
 
 
+def run_assistant(assistant):
+    # Windows audio/browser tools use COM on the assistant's worker thread.
+    from comtypes import CoInitialize, CoUninitialize
+    CoInitialize()
+    try:
+        assistant.run()
+    finally:
+        CoUninitialize()
+
+
 def build_tray_icon(assistant):
 
     def on_open_ui(icon, item):
@@ -87,7 +97,8 @@ def main():
 
     # Start the assistant in the background so the tray stays responsive.
     assistant_thread = threading.Thread(
-        target=assistant.run,
+        target=run_assistant,
+        args=(assistant,),
         daemon=True,
     )
 

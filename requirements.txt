@@ -1,4 +1,6 @@
-faster-whisper
+faster-whisper==1.2.1
+# faster-whisper 1.2.1 uses av.open(metadata_errors=...), removed in PyAV 19.
+av>=11,<19
 sounddevice
 numpy
 groq
@@ -15,3 +17,5 @@ vosk
 ddgs
 beautifulsoup4
 requests
+kokoro-onnx==0.4.9
+onnxruntime>=1.20,<2

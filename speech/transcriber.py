@@ -1,6 +1,6 @@
 from faster_whisper import WhisperModel
 
-from config.settings import WHISPER_MODEL_SIZE
+from config.settings import WHISPER_MODEL_SIZE, WHISPER_DEVICE, WHISPER_COMPUTE_TYPE
 
 
 class Transcriber:
@@ -16,15 +16,20 @@ class Transcriber:
 
         self.model = WhisperModel(
             WHISPER_MODEL_SIZE,
-            device="cpu",
-            compute_type="int8"
+            device=WHISPER_DEVICE,
+            compute_type=WHISPER_COMPUTE_TYPE
         )
 
     def transcribe(self, audio):
 
+        if audio is None or len(audio) == 0:
+            return ""
+
         segments, _ = self.model.transcribe(
             audio,
-            language="en"
+            language="en",
+            vad_filter=True,
+            condition_on_previous_text=False,
         )
 
         text = " ".join(
