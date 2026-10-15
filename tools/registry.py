@@ -7,12 +7,14 @@ class ToolRegistry:
         self,
         application_tools,
         volume_tools,
-        web_tools
+        web_tools,
+        automation_tools=None
     ):
 
         self.application_tools = application_tools
         self.volume_tools = volume_tools
         self.web_tools = web_tools
+        self.automation_tools = automation_tools
 
         self.functions = {
 
@@ -46,6 +48,8 @@ class ToolRegistry:
             "read_webpage":
                 self.web_tools.read_webpage,
         }
+        if automation_tools is not None:
+            self.functions.update(automation_tools.functions)
 
     # ============================================================
     # TOOL DEFINITIONS
@@ -369,7 +373,7 @@ class ToolRegistry:
                     }
                 }
             }
-        ]
+        ] + (self.automation_tools.get_tools() if self.automation_tools is not None else [])
 
     # ============================================================
     # EXECUTE TOOL

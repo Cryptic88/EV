@@ -8,6 +8,7 @@ from tools.applications import ApplicationTools
 from tools.volume import VolumeTools
 from tools.web_search import WebTools
 from tools.registry import ToolRegistry
+from tools.automation import AutomationTools
 
 from core.state import AssistantState
 from config.settings import WAKE_WORD_COOLDOWN_SECONDS
@@ -54,6 +55,7 @@ class EVAssistant:
         self.volume_tools = VolumeTools()
 
         self.web_tools = WebTools()
+        self.automation_tools = AutomationTools(self.state, self.listener, self.transcriber, self.speaker)
 
         # =========================
         # TOOL REGISTRY
@@ -62,7 +64,8 @@ class EVAssistant:
         self.tool_registry = ToolRegistry(
             self.application_tools,
             self.volume_tools,
-            self.web_tools
+            self.web_tools,
+            self.automation_tools
         )
 
         # =========================
@@ -99,6 +102,11 @@ class EVAssistant:
 
         self.state.reset()
         follow_up = False
+        if getattr(self, 'connect_whatsapp_on_start', False):
+            try:
+                self.state.log(self.automation_tools.whatsapp_tools.whatsapp('connect'))
+            except Exception as error:
+                self.state.log(f'WhatsApp setup page could not open: {error}')
 
         try:
             self.speaker.speak(

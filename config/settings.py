@@ -64,6 +64,9 @@ GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
 EDGE_VOICE = os.getenv("EDGE_VOICE", "en-US-JennyNeural")
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
+AUTOMATION_ROOTS = [p for p in os.getenv("AUTOMATION_ROOTS", PROJECT_ROOT).split(os.pathsep) if p]
+AUTOMATION_TIMEZONE = os.getenv("AUTOMATION_TIMEZONE", "Africa/Johannesburg")
+MAX_TOOL_ROUNDS = int(os.getenv("MAX_TOOL_ROUNDS", "10"))
 MODEL_DIR = os.path.join(PROJECT_ROOT, "models")
 TTS_BACKEND = os.getenv("TTS_BACKEND", "kokoro").lower()
 # Never send speech to a cloud fallback unless explicitly enabled.

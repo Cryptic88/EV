@@ -77,8 +77,10 @@ class GroqClient:
 
     def ask_stream(self, user_text):
         self.state.set_status("thinking")
+        if self.conversation and self.conversation[0].get('role') == 'system':
+            self.conversation[0]['content'] = get_system_prompt()
         self.conversation.append({"role": "user", "content": user_text})
-        for round_index in range(4):
+        for round_index in range(settings.MAX_TOOL_ROUNDS):
             text = ""
             calls = {}
             sentences = SentenceBuffer()
@@ -124,7 +126,7 @@ class GroqClient:
                         raise ValueError("Tool arguments must be an object")
                     if self.state.is_stopped():
                         result = "Cancelled because E.V. is stopping."
-                    elif round_index == 3:
+                    elif round_index == settings.MAX_TOOL_ROUNDS - 1:
                         result = "Tool round limit reached; ask the user to try again."
                     else:
                         self.state.log(f"Executing tool: {name}")

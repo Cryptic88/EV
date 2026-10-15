@@ -49,9 +49,13 @@ E.V. has 34 configured app shortcuts based on this laptop's installed Start-menu
 | Browsers and media | Chrome, Edge, Firefox, Spotify, CapCut |
 | Utilities | Notepad, Calculator, Paint, File Explorer, Task Manager, Snipping Tool, 7-Zip, WinRAR |
 
-Examples: “Open VS Code”, “Open WhatsApp”, “Open Outlook”, “Open classic Outlook”, “Open Android Studio”, “Open Postman”, or “Close Visual Studio”. Closing an app still requires spoken confirmation. Known app aliases map to exact executable names, so closing VS Code targets `Code.exe`, while Visual Studio targets `devenv.exe`. Outlook selects the new app; classic Outlook is separate. Opening these apps launches them; it does not read or send their messages or edit their contents.
+Examples: “Open VS Code”, “Open WhatsApp”, “Open Outlook”, “Open classic Outlook”, “Open Android Studio”, “Open Postman”, or “Close Visual Studio”. Closing an app still requires spoken confirmation. Known app aliases map to exact executable names, so closing VS Code targets `Code.exe`, while Visual Studio targets `devenv.exe`. Outlook selects the new app; classic Outlook is separate. In-app workflows are provided by additional tools described in [AUTOMATION.md](AUTOMATION.md).
 
 To add another shortcut, add a record with `name`, `aliases`, `target`, and `process_names`, then restart E.V. Store apps use `shell:AppsFolder\<AppID>`; use `Get-StartApps` to find installed app IDs. Executable paths also work. Some app IDs contain installation versions; update their records after an upgrade if launching stops working. The configured app names are included in E.V.'s prompt.
+
+## In-app workflows
+
+E.V. can edit code within allowed Documents folders, open projects, run builds/tests, create/edit Word and Excel files, operate a dedicated Edge browser, draft and confirm WhatsApp/email sends, manage personal calendar events, and control Spotify playback. File edits keep backups. WhatsApp requires manual phone linking in the E.V. browser; Outlook mail/calendar require a configured **classic Outlook** profile. Spotify search opens results for manual track selection, after which media-session controls work. See [AUTOMATION.md](AUTOMATION.md) for supported commands, setup steps and practical limits.
 
 ## Fully local brain (optional)
 

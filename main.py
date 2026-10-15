@@ -1,5 +1,6 @@
 import threading
 import webbrowser
+import argparse
 
 from PIL import Image, ImageDraw
 import pystray
@@ -58,7 +59,10 @@ def run_assistant(assistant):
     try:
         assistant.run()
     finally:
-        CoUninitialize()
+        try:
+            assistant.automation_tools.browser_tools.close()
+        finally:
+            CoUninitialize()
 
 
 def build_tray_icon(assistant):
@@ -89,8 +93,12 @@ def build_tray_icon(assistant):
 
 def main():
 
+    parser = argparse.ArgumentParser(description='E.V. voice assistant')
+    parser.add_argument('--connect-whatsapp', action='store_true', help='Open manual WhatsApp Web linking at startup')
+    args = parser.parse_args()
     # Create E.V.
     assistant = EVAssistant()
+    assistant.connect_whatsapp_on_start = args.connect_whatsapp
 
     # Start local web interface in the background.
     start_web_server(assistant.state)
